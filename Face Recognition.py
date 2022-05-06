@@ -90,10 +90,9 @@ def add_staff_post():
     qry1= "INSERT INTO `login`(`username`,`password`,`type`) VALUES('"+email+"','"+str(password)+"','staff')"
     lid = d.insert(qry1)
 
-
     qry="INSERT INTO `staff`(`s_name`,`s_gender`,`s_photo`,`s_palce`,`s_pin`,`s_post`,`s_district`,`dep_id`,`s_phone`,`s_email`,`s_login_id`,`qualification`) VALUES('"+sname+"','"+gender+"','"+path+"','"+place+"','"+pin+"','"+post+"','"+district+"','"+department+"','"+phone+"','"+email+"','"+str(lid)+"','"+qualification+"')"
     res=d.insert(qry)
-    print(res)
+    # print(res)
 
     return '''<script>alert('success');window.location='/add_staff'</script>'''
 
@@ -133,7 +132,7 @@ def add_student_post():
 
 
     qry4="INSERT INTO`student`(stud_name, sem,stud_gender, stud_photo, stud_place, stud_pin, stud_post, stud_district, course_id, stud_phone,stud_email, stud_login_id, guardian, guardian_email, guardian_login) values('"+stdname+"','"+sem+"','"+gender+"','"+path+"','"+place+"','"+pin+"','"+post+"','"+district+"','"+course+"','"+phone+"','"+email+"','"+str(lid)+"','"+guardian+"','"+guardian_email+"','"+str(lid)+"')"
-    print(qry4)
+    # print(qry4)
     res=d.insert(qry4)
     return '''<script>alert('success');window.location='/add_student'</script>'''
 
@@ -144,9 +143,9 @@ def f():
 @app.route("/adminfileupload",methods=['post'])
 def adminfileupload():
 
-    file1=request.files["file1"]
-    file2=request.files["file2"]
-    file3=request.files["file3"]
+
+    # file2=request.files["file2"]
+    # file3=request.files["file3"]
 
 
     fp1="Z:\\Face Recognition\\static\\sg\\a1.jpg"
@@ -154,14 +153,24 @@ def adminfileupload():
     fp3="Z:\\Face Recognition\\static\\sg\\a3.jpg"
 
     a=[]
-    a.append(fp1)
-    a.append(fp2)
-    a.append(fp3)
 
+    if "file1"  in request.files:
+        file1 = request.files["file1"]
+        if file1.filename!="":
+            a.append(fp1)
+            file1.save(fp1)
 
-    file1.save(fp1)
-    file2.save(fp2)
-    file3.save(fp3)
+    if "file2"  in request.files:
+        file2 = request.files["file2"]
+        if file2.filename != "":
+            a.append(fp2)
+            file2.save(fp2)
+
+    if "file3"  in request.files:
+        file3 = request.files["file3"]
+        if file3.filename != "":
+            a.append(fp3)
+            file3.save(fp3)
 
     db = Db()
     results = db.select("SELECT * FROM `student`")
@@ -171,7 +180,7 @@ def adminfileupload():
     if results is not None:
         for result in results:
             img = result['stud_photo']
-            print(img)
+            # print(img)
             ss = "Z:\\Face Recognition" + img
             img = ss
             b_img = face_recognition.load_image_file(img)
@@ -181,33 +190,32 @@ def adminfileupload():
     studentids=[]
     import face_recognition
 
+    l=request.form["hour"]
+    dates=request.form["date"]
+    subname=request.form["subname"]
     for m in a:
         unknown_image = face_recognition.load_image_file(m)
         try:
             m = len(face_recognition.face_encodings(unknown_image))
-            print(m)
             for a in range(m):
                 unknown_face_encoding = face_recognition.face_encodings(unknown_image)[a]
                 results = face_recognition.compare_faces(known_faces, unknown_face_encoding, tolerance=0.48)
-                print(results)
                 for i in range(len(results)):
                     if results[i] == True:
                         studentid = userids[i]
                         db = Db()
-
                         if studentid not in studentids:
                             studentids.append(studentid)
-
-                        qry = "SELECT * FROM `attendance` WHERE DATE=curdate() and stud_id='" + str(
-                            studentid) + "' AND HOUR='" + str(1) + "'"
+                        qry = "SELECT * FROM `attendance` WHERE DATE='"+dates+"' and stud_id='" + str(
+                            studentid) + "' AND HOUR='" + str(l) + "'"
                         res = db.select(qry)
                         if len(res) == 0:
-                            qry = "INSERT INTO `attendance` (`stud_id`,`date`,`hour`) VALUES ('" + str(
-                                studentid) + "',CURDATE(),'1')"
+                            qry = "INSERT INTO `attendance` (`stud_id`,`date`,`hour`,subname) VALUES ('" + str(
+                                studentid) + "','"+dates+"','"+str(l)+"','"+subname+"')"
                             db.insert(qry)
-
         except Exception as a:
-            print("okkkkkkk", a)
+            # print("okkkkkkk", a)
+            pass
 
     k=[]
 
@@ -237,7 +245,7 @@ def course_add_post():
     course=request.form['textfield']
     semester=request.form['textfield2']
     qry = "INSERT INTO course (dep_id,course_name,sem)VALUES('" + department + "','" + course + "','" + semester + "')"
-    print(qry)
+    # print(qry)
     d = Db()
     d.insert(qry)
     return '''<script> alert('success');window.location='/course'</script>'''
@@ -299,7 +307,7 @@ def edit_staff (id):
 
 @app.route('/edit_staff_post',methods=['post'])
 def edit_staff_post ():
-    sname=request.form['textfield']
+    name=request.form['textfield']
     gender=request.form['radio']
     id=str(session["sid"])
     place=request.form['textfield2']
@@ -315,19 +323,23 @@ def edit_staff_post ():
     d = Db()
     if 'fileField' in request.files:
         photo=request.files['fileField']
-        dt = time.strftime("%Y%m%d-%H%M%S")
-        photo.save(staticpath+"staff_media\\"+dt+".jpg")
-        path = "/static/staff_media/"+dt+".jpg"
+        if photo.filename!="":
+            dt = time.strftime("%Y%m%d-%H%M%S")
+            photo.save(staticpath+"staff_media\\"+dt+".jpg")
+            path = "/static/staff_media/"+dt+".jpg"
 
    
 
-        qry="update staff set s_name='"+name+"',s_gender='"+gender+"',s_photo='"+path+"',s_palce='"+place+"',s_pin='"+pin+"',s_post='"+post+"',s_district='"+district+"',dep_id='"+department+"',s_phone='"+phone+"',s_email='"+email+"',qualification='"+qualification+"' where staff_id='"+id+"'"
-        res=d.insert(qry)
-        print(res)
+            qry="update staff set s_name='"+name+"',s_gender='"+gender+"',s_photo='"+path+"',s_palce='"+place+"',s_pin='"+pin+"',s_post='"+post+"',s_district='"+district+"',dep_id='"+department+"',s_phone='"+phone+"',s_email='"+email+"',qualification='"+qualification+"' where staff_id='"+id+"'"
+            res=d.insert(qry)
+        else:
+            qry = "update staff set s_name='" + name + "',s_gender='" + gender + "'s_palce='" + place + "',s_pin='" + pin + "',s_post='" + post + "',s_district='" + district + "',dep_id='" + department + "',s_phone='" + phone + "',s_email='" + email + "',qualification='" + qualification + "' where staff_id='" + id + "'"
+            res = d.insert(qry)
+
     else:
-        qry="update staff set s_name='"+name+"',s_gender='"+gender+"',s_photo='"+path+"',s_palce='"+place+"',s_pin='"+pin+"',s_post='"+post+"',s_district='"+district+"',dep_id='"+department+"',s_phone='"+phone+"',s_email='"+email+"',qualification='"+qualification+"' where staff_id='"+id+"'"
+        qry="update staff set s_name='"+name+"',s_gender='"+gender+"'s_palce='"+place+"',s_pin='"+pin+"',s_post='"+post+"',s_district='"+district+"',dep_id='"+department+"',s_phone='"+phone+"',s_email='"+email+"',qualification='"+qualification+"' where staff_id='"+id+"'"
         res=d.insert(qry)
-        print(res)
+        # print(res)
     return '''<script>alert('success');window.location='/view_staff'</script>'''
 
 
@@ -340,6 +352,7 @@ def edit_student (id):
     d=Db()
     res="select * from student where stud_id='"+str(id)+"'"
     var=d.selectOne(res)
+    print(var)
     return render_template('admin/Edit student.html',abcd=var)
 
 
@@ -347,7 +360,8 @@ def edit_student (id):
 def edit_student_post ():
     stdname = request.form['textfield']
     gender = request.form['radio']
-    photo = request.files['fileField']
+    filename="Z:\\Face Recognition\\static\\student_media\\"
+    pth="/static/student_media/"
     place = request.form['textfield2']
     pin = request.form['textfield3']
     post = request.form['textfield4']
@@ -355,15 +369,31 @@ def edit_student_post ():
     course = request.form['select']
     phone = request.form['textfield5']
     email = request.form['textfield6']
-    guardian = request.form['textfield7']
-    guardian_email = request.form['textfield8']
     sem=request.form["sem"]
     id = request.form['sid']
+    if 'fileField' in request.files:
+        photo = request.files['fileField']
+        if photo.filename!="":
+            from datetime import datetime
+            a= datetime.now().strftime("%Y%m%d_%H%M%S")
+            photo.save(filename+ a+".jpg")
+            pth=pth+ a+".jpg"
+            qry="update student set stud_name='"+stdname+"',stud_gender='"+gender+"',stud_photo='"+pth+"',stud_place='"+place+"',stud_pin='"+pin+"',stud_post='"+post+"',stud_district='"+district+"',course_id='"+course+"',stud_phone='"+phone+"',stud_email='"+email+"',sem='"+sem+"' where stud_id='"+str(id)+"'"
+            d=Db()
+            d.update(qry)
+        else:
+            qry = "update student set stud_name='" + stdname + "',stud_gender='" + gender + "',stud_place='" + place + "',stud_pin='" + pin + "',stud_post='" + post + "',stud_district='" + district + "',course_id='" + course + "',stud_phone='" + phone + "',stud_email='" + email + "',sem='" + sem + "' where stud_id='" + str(
+                id) + "'"
+            d = Db()
+            d.update(qry)
+    else:
+        qry = "update student set stud_name='" + stdname + "',stud_gender='" + gender + "',stud_place='" + place + "',stud_pin='" + pin + "',stud_post='" + post + "',stud_district='" + district + "',course_id='" + course + "',stud_phone='" + phone + "',stud_email='" + email + "',sem='" + sem + "' where stud_id='" + str(
+            id) + "'"
+        d = Db()
+        d.update(qry)
 
-    qry="update student set stud_name='"+stdname+"',stud_gender='"+gender+"',stud_photo='"+photo+"',stud_place='"+place+"',stud_pin='"+pin+"',stud_post='"+post+"',stud_district='"+district+"',stud_course='"+course+"',stud_phone='"+phone+"',stud_email='"+email+"',guardian='"+guardian+"',guardian_email='"+guardian_email+"',sem='"+sem+"' where stud_id='"+str(id)+"'"
-    d=Db()
-    var1=d.selectOne(qry)
-    return render_template('admin/Edit student.html')
+
+    return "<Script>alert('Updated successfully');window.location='/view_student'</script>"
 
 
 
@@ -391,7 +421,7 @@ def edit_subject_post ():
     d=Db()
     qry="UPDATE `subject` SET `course_id`='"+course+"', `semester`='"+semester+"', `subject`='"+subject+"' WHERE `sub_id`='"+str(id)+"'"
     d.update(qry)
-    print(qry)
+    # print(qry)
     return '''<script> alert('update succesfully');window.location='/view_subject'</script>'''
 
 
@@ -585,7 +615,7 @@ def course_edit_post():
     semester=request.form['textfield2']
     id=str(session["crsid"])
     qry = "update course set dep_id='"+department+"',course_name='"+course+"',sem='"+semester+"' where course_id='"+id+"'"
-    print(qry)
+    # print(qry)
     d = Db()
     d.update(qry)
     return '''<script> alert('success');window.location='/view_course'</script>'''
@@ -657,15 +687,17 @@ def adminviewattendanceviewpost():
     date=request.form["date"]
     hour=request.form["hour"]
     qry="SELECT `attendance`.*,`student`.* FROM  student  LEFT  JOIN  `attendance` ON `attendance`.`stud_id`=`student`.`stud_id` WHERE `attendance`.date='"+date+"' AND `course_id`='"+crs+"' AND `hour`='"+hour+"'"
-    print(qry)
-
     res=db.select(qry)
 
     qry = "SELECT * FROM `course`"
     data = db.select(qry)
 
+    a=""
+    if len(res)>0:
+        a=res[0]['subname']
 
-    return render_template("admin/Viewattendance.html",datas=res,crs=data)
+
+    return render_template("admin/Viewattendance.html",datas=res,crs=data,a=a)
 
 
 
